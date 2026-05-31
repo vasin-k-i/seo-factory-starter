@@ -1,0 +1,10 @@
+requests>=2.31
+beautifulsoup4>=4.12
+lxml>=5.0
+python-frontmatter>=1.0
+anthropic>=0.42
+google-api-python-client>=2.100
+google-auth>=2.20
+google-auth-oauthlib>=1.0
+networkx>=3.2
+pandas>=2.1

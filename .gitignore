@@ -1,0 +1,22 @@
+# Секреты — НИКОГДА не коммитим
+.env
+.env.local
+seo-agent/secrets/
+content-factory/secrets/
+*service-account*.json
+*client-secret*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Логи и шумные снимки данных
+content-factory/logs/
+seo-agent/data/rankings/*.json
+seo-agent/data/eeat/*.json
+!seo-agent/data/rankings/tracked-keywords.json
+
+# OS
+.DS_Store

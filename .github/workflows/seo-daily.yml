@@ -1,0 +1,99 @@
+name: seo-agent · daily morning digest
+
+# Утренняя сводка по сайту человеческим языком + блок SEO-стратега (Claude).
+# Cron: каждый день 05:30 UTC = 08:30 МСК — после ночного M3 (06:00 МСК).
+# Шаги: быстрый мини-аудит M2 (без PageSpeed) → сборка дайджеста → Telegram.
+
+on:
+  schedule:
+    - cron: "30 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "dry-run (без Telegram)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-agent-daily
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: seo-agent/requirements.txt
+
+      - name: Install dependencies
+        working-directory: seo-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install lxml
+
+      - name: Configure git author
+        run: |
+          git config user.email "bot@example.com"
+          git config user.name "seo-agent"
+
+      # Мини-аудит без PageSpeed — быстро (~1 мин). Сам в Telegram не шлёт
+      # (дельту покажет дайджест), но обновляет снимок для суточной дельты.
+      - name: Run M2 mini-audit (skip PSI)
+        working-directory: seo-agent
+        env:
+          TELEGRAM_BOT_TOKEN: ""
+          TELEGRAM_CHAT_ID: ""
+        run: |
+          python3 orchestrator.py m2 --skip-psi --dry-run || true
+
+      - name: Run daily digest
+        working-directory: seo-agent
+        env:
+          GSC_OAUTH_REFRESH_TOKEN: ${{ secrets.GSC_OAUTH_REFRESH_TOKEN }}
+          GSC_OAUTH_CLIENT_ID: ${{ secrets.GSC_OAUTH_CLIENT_ID }}
+          GSC_OAUTH_CLIENT_SECRET: ${{ secrets.GSC_OAUTH_CLIENT_SECRET }}
+          GSC_SITE_URL: sc-domain:example.com
+          SEO_SITE_DOMAIN: example.com
+          YANDEX_WEBMASTER_TOKEN: ${{ secrets.YANDEX_WEBMASTER_TOKEN }}
+          YANDEX_WEBMASTER_USER_ID: ${{ secrets.YANDEX_WEBMASTER_USER_ID }}
+          YANDEX_WEBMASTER_HOST_ID: ${{ secrets.YANDEX_WEBMASTER_HOST_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          ARGS=""
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python3 orchestrator.py daily $ARGS
+
+      - name: Commit & push (свежий аудит + утренний отчёт)
+        if: success()
+        run: |
+          git add seo-agent/reports/daily-*.md \
+                  seo-agent/data/audits/**/report.md \
+                  seo-agent/data/audits/**/audit.json || true
+          if ! git diff --staged --quiet; then
+            DATE=$(date -u +%Y-%m-%d)
+            git commit -m "seo-agent: daily digest ${DATE}
+
+          Утренняя сводка + мини-аудит · автогенерация"
+            git push
+          else
+            echo "Нет изменений, пропускаю commit"
+          fi

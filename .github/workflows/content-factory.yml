@@ -1,0 +1,120 @@
+name: content-factory
+
+# Запускается каждый день в 06:00 UTC = 09:00 МСК.
+# Anthropic API недоступен из РФ → запускаем на runner'ах GitHub (US/EU).
+# Также можно запустить вручную из Actions tab.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      articles_per_day:
+        description: "Сколько статей сгенерировать (по умолчанию 5)"
+        required: false
+        default: "5"
+      enable_editor_pass:
+        description: "Включить этап редактора/фактчека (true/false)"
+        required: false
+        default: "true"
+      use_batch:
+        description: "Batch API (−50%, чуть дольше). false → старый последовательный режим"
+        required: false
+        default: "true"
+
+permissions:
+  # Для коммита/пуша новых статей в этот же репо
+  contents: write
+
+# Только один прогон одновременно — чтобы не пересеклись pull/push
+concurrency:
+  group: content-factory
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # persist-credentials: true (по умолчанию) → orchestrator сможет git push
+          # через тот же GITHUB_TOKEN, без отдельного SSH-ключа
+          persist-credentials: true
+          # fetch-depth: 2 — нужен родитель текущего HEAD (${{ github.sha }}),
+          # чтобы шаг пинга вычислил git diff против состояния ДО генерации статей.
+          fetch-depth: 2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: content-factory/requirements.txt
+
+      - name: Install dependencies
+        working-directory: content-factory
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure git author
+        run: |
+          git config user.email "bot@example.com"
+          git config user.name "content-factory"
+
+      - name: Run orchestrator
+        working-directory: content-factory
+        env:
+          # Секреты — задать в Settings → Secrets → Actions
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-sonnet-4-6
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
+          EMAIL_FROM: "onboarding@resend.dev"
+          EMAIL_TO: "you@example.com"
+          EMAIL_FROM_FALLBACK: "onboarding@resend.dev"
+
+          # Параметры запуска
+          ARTICLES_PER_DAY: ${{ github.event.inputs.articles_per_day || '5' }}
+          ENABLE_EDITOR_PASS: ${{ github.event.inputs.enable_editor_pass || 'true' }}
+          USE_BATCH: ${{ github.event.inputs.use_batch || 'true' }}
+          TIMEZONE: Europe/Moscow
+
+          # Пути для blog (orchestrator определит SITE_REPO_PATH из GITHUB_WORKSPACE)
+          SITE_BLOG_DIR: content/blog
+          SITE_REPO_BRANCH: main
+        run: python orchestrator.py
+
+      # Пинг поисковиков о свежих статьях. Отдельный workflow seo-ping.yml (on:push)
+      # НЕ срабатывает на коммиты фабрики — push через GITHUB_TOKEN не триггерит
+      # другие workflow (защита GitHub от рекурсии). Поэтому пингуем здесь же,
+      # в том же job, против состояния репо ДО генерации (${{ github.sha }}).
+      - name: Ping search engines (IndexNow + Я.Вебмастер + GSC)
+        if: success()
+        env:
+          GSC_OAUTH_REFRESH_TOKEN: ${{ secrets.GSC_OAUTH_REFRESH_TOKEN }}
+          GSC_OAUTH_CLIENT_ID: ${{ secrets.GSC_OAUTH_CLIENT_ID }}
+          GSC_OAUTH_CLIENT_SECRET: ${{ secrets.GSC_OAUTH_CLIENT_SECRET }}
+          GSC_SITE_URL: sc-domain:example.com
+          YANDEX_WEBMASTER_TOKEN: ${{ secrets.YANDEX_WEBMASTER_TOKEN }}
+          YANDEX_WEBMASTER_USER_ID: ${{ secrets.YANDEX_WEBMASTER_USER_ID }}
+          YANDEX_WEBMASTER_HOST_ID: ${{ secrets.YANDEX_WEBMASTER_HOST_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SITE_URL_BASE: https://example.com
+          SITEMAP_URL: https://example.com/sitemap.xml
+        run: |
+          pip install google-api-python-client google-auth google-auth-oauthlib requests
+          python3 seo-agent/scripts/ping_new_urls.py --from-git-diff --base-ref=${{ github.sha }} --head-ref=HEAD
+
+      - name: Upload run log as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-factory-log-${{ github.run_id }}
+          path: content-factory/logs/
+          retention-days: 14
+          if-no-files-found: ignore

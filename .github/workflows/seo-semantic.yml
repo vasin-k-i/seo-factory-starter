@@ -1,0 +1,89 @@
+name: seo-agent · M1 semantic collector
+
+# M1 — еженедельный сбор поисковых запросов из GSC + Я.Вебмастер,
+# кластеризация через Claude, дозаливка тем в content-factory/data/topics_backlog.csv.
+# Cron: воскресенье 01:00 UTC = 04:00 МСК (за 5ч до content-factory в понедельник).
+
+on:
+  schedule:
+    - cron: "0 1 * * 0"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Глубина истории (дней)"
+        required: false
+        default: "30"
+      dry_run:
+        description: "dry-run (без записи в backlog и Telegram)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: seo-agent-m1
+  cancel-in-progress: false
+
+jobs:
+  semantic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: seo-agent/requirements.txt
+
+      - name: Install dependencies
+        working-directory: seo-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure git author
+        run: |
+          git config user.email "bot@example.com"
+          git config user.name "seo-agent"
+
+      - name: Run M1 semantic collector
+        working-directory: seo-agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_MODEL: claude-sonnet-4-6
+          GSC_OAUTH_REFRESH_TOKEN: ${{ secrets.GSC_OAUTH_REFRESH_TOKEN }}
+          GSC_OAUTH_CLIENT_ID: ${{ secrets.GSC_OAUTH_CLIENT_ID }}
+          GSC_OAUTH_CLIENT_SECRET: ${{ secrets.GSC_OAUTH_CLIENT_SECRET }}
+          GSC_SITE_URL: sc-domain:example.com
+          YANDEX_WEBMASTER_TOKEN: ${{ secrets.YANDEX_WEBMASTER_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DAYS: ${{ github.event.inputs.days || '30' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          ARGS="--days $DAYS"
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python3 orchestrator.py m1 $ARGS
+
+      - name: Commit & push новые темы + снимок
+        if: success()
+        run: |
+          git add content-factory/data/topics_backlog.csv seo-agent/data/semantic/*.json || true
+          if ! git diff --staged --quiet; then
+            DATE=$(date -u +%Y-%m-%d)
+            git commit -m "seo-agent: semantic ${DATE}
+
+          M1 weekly · новые темы в backlog + snapshot из GSC/Я.Вебмастер"
+            git push
+          else
+            echo "Нет новых тем, пропускаю commit"
+          fi

@@ -1,0 +1,109 @@
+name: seo-agent · ping new urls
+
+# Уведомляет Яндекс (IndexNow + Webmaster recrawl) и Google (sitemap.submit) о
+# свежепубликованных URL сразу после push в main. Триггерится на правки
+# контента (блог, программы, каталог специальностей, главная). Скрипт сам
+# вычисляет diff против предыдущего коммита и маппит файлы → URL.
+#
+# ВАЖНО про охват:
+#   - on:push здесь ловит РУЧНЫЕ пуши с локали (вы/Claude правят блог/лендинги).
+#   - Ежедневные 5 статей от content-factory сюда НЕ попадают: их push идёт через
+#     GITHUB_TOKEN внутри Actions, а push под GITHUB_TOKEN не триггерит другие
+#     workflow (защита GitHub от рекурсии). Поэтому фабрика пингует сама —
+#     отдельным шагом внутри content-factory.yml. Не дублируем.
+#   - Ботовские коммиты seo-agent (rankings/digest) отсекаются paths-фильтром
+#     (они в seo-agent/, не в content/).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "content/blog/**.mdx"
+      - "content/programs/**.mdx"
+      - "content/specialties.json"
+      - "content/home.mdx"
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URL через пробел (пусто = взять из git diff)"
+        required: false
+        default: ""
+      sitemap_only:
+        description: "Только sitemap.submit, без точечных пингов"
+        required: false
+        default: "false"
+      dry_run:
+        description: "dry-run (без реальных пингов)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seo-agent-ping
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth: 2 — нужен предыдущий коммит для git diff HEAD~1..HEAD.
+          fetch-depth: 2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: seo-agent/requirements.txt
+
+      - name: Install dependencies
+        working-directory: seo-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run ping_new_urls
+        working-directory: seo-agent
+        env:
+          GSC_OAUTH_REFRESH_TOKEN: ${{ secrets.GSC_OAUTH_REFRESH_TOKEN }}
+          GSC_OAUTH_CLIENT_ID: ${{ secrets.GSC_OAUTH_CLIENT_ID }}
+          GSC_OAUTH_CLIENT_SECRET: ${{ secrets.GSC_OAUTH_CLIENT_SECRET }}
+          GSC_SITE_URL: sc-domain:example.com
+          YANDEX_WEBMASTER_TOKEN: ${{ secrets.YANDEX_WEBMASTER_TOKEN }}
+          YANDEX_WEBMASTER_USER_ID: ${{ secrets.YANDEX_WEBMASTER_USER_ID }}
+          YANDEX_WEBMASTER_HOST_ID: ${{ secrets.YANDEX_WEBMASTER_HOST_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SITE_URL_BASE: https://example.com
+          SITEMAP_URL: https://example.com/sitemap.xml
+          MANUAL_URLS: ${{ github.event.inputs.urls }}
+          SITEMAP_ONLY: ${{ github.event.inputs.sitemap_only || 'false' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          ARGS=""
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ "$SITEMAP_ONLY" = "true" ]; then
+            ARGS="$ARGS --sitemap-only"
+            python3 scripts/ping_new_urls.py $ARGS
+          elif [ -n "$MANUAL_URLS" ]; then
+            python3 scripts/ping_new_urls.py $ARGS $MANUAL_URLS
+          else
+            ARGS="$ARGS --from-git-diff"
+            python3 scripts/ping_new_urls.py $ARGS
+          fi
+
+      - name: Upload ping log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ping-log-${{ github.run_id }}
+          path: seo-agent/data/ping-log/
+          retention-days: 30
+          if-no-files-found: ignore
