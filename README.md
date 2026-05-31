@@ -1,9 +1,22 @@
 # SEO-завод · стартовый шаблон
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Use this template](https://img.shields.io/badge/Use%20this%20template-2ea44f?logo=github&logoColor=white)](https://github.com/vasin-k-i/seo-factory-starter/generate)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](#)
+[![Powered by Claude](https://img.shields.io/badge/Powered%20by-Claude-D97757)](#)
+[![Runs on GitHub Actions](https://img.shields.io/badge/Runs%20on-GitHub%20Actions-2088FF?logo=githubactions&logoColor=white)](#)
+[![Reports to Telegram](https://img.shields.io/badge/Reports-Telegram-26A5E4?logo=telegram&logoColor=white)](#)
+[![Yandex + Google](https://img.shields.io/badge/SEO-Yandex%20%2B%20Google-FF0000)](#)
+
 Автоматический SEO: агенты в GitHub Actions каждое утро присылают в Telegram
 короткий понятный отчёт — трафик, позиции, технические ошибки и **что сделать
 сегодня** живым языком (через Claude). Плюс контент-фабрика, которая сама пишет
 статьи в блог, и пинги быстрой индексации.
+
+<p align="center">
+  <img src="assets/report-example.png" width="660" alt="Пример утреннего SEO-отчёта в Telegram">
+</p>
+<p align="center"><sub>Так выглядит утренний отчёт в Telegram. Данные на скриншоте обезличены (example.com).</sub></p>
 
 > Подробное «почему так» и стратегия — в сопроводительном PDF-руководстве.
 > Этот репозиторий — рабочий код. Жмёте **Use this template**, кладёте ключи,
