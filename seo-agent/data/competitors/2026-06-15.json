@@ -1,0 +1,112 @@
+{
+  "date": "2026-06-15",
+  "competitors": [
+    {
+      "name": "Synergy",
+      "homepage_analysis": {
+        "error": "HTTP 403"
+      },
+      "recent_urls": [
+        "https://synergy.ru/edu/news/ege",
+        "https://synergy.ru/about/blog/studenty_medicinskogo_fakulteta_izucili_pravila_otbora_i_transportirovki_biomaterialov",
+        "https://synergy.ru/about/blog/rossiiskoe_obrazovatelnoe_agentstvo_otkrylo_filial_v_kitae_dlia_nabora_studentov_v_rossiiskie_vuzy",
+        "https://synergy.ru/about/blog/starsii_prepodavatel_kafedry_cifrovoi_ekonomiki_vystupila_na_sammite_tadviser",
+        "https://synergy.ru/about/blog/dni_rossiiskogo_obrazovaniia_sobrali_v_niu_deli_predstavitelei_18_vuzov_rf",
+        "https://synergy.ru/about/blog/studentka_iuridiceskogo_fakulteta_vystupila_na_vserossiiskom_naucnom_forume",
+        "https://synergy.ru/about/blog/prepodavatel_sinergii_prinial_ucastie_v_soveshhanii_cik_po_podgotovke_k_vyboram_v_gosdumu",
+        "https://synergy.ru/about/blog/studenty_fakulteta_kino_i_televideniia_pokazali_diplomnyi_spektakl_po_ostrovskomu",
+        "https://synergy.ru/about/blog/v_universitete_sinergiia_prosla_lekciia_anatoliia_kucereny",
+        "https://synergy.ru/about/blog/universitet_sinergiia_vystupil_obrazovatelnym_partnerom_festivalia_na_gazone",
+        "https://synergy.ru/about/blog/vice_prezident_sinergii_vystupil_na_kruglom_stole_v_tass",
+        "https://synergy.ru/about/blog/studentka_fakulteta_it_pobedila_na_konkurse_sozdai_nase_i_polucila_1_mln_rublei",
+        "https://synergy.ru/about/blog/sinergiia_zapustila_kurs_nacalnoi_voennoi_podgotovki_dlia_studentov",
+        "https://synergy.ru/about/blog/zavkafedroi_sportivnogo_marketinga_vystupil_na_kruglom_stole_o_sotrudnicestve_biznesa_i_sportivnyx_organizacii",
+        "https://synergy.ru/about/blog/studenty_sinergii_vstretilis_s_deputatom_gosdumy_viaceslavom_damdincurunovym",
+        "https://synergy.ru/about/blog/sinergiia_priniala_ucastie_v_semeinom_festivale_nasledniki",
+        "https://synergy.ru/about/blog/direktor_fakulteta_logistiki_oboznacila_vyzovy_otrasli_na_mezdunarodnoi_vystavke",
+        "https://synergy.ru/about/blog/sinergiia_priniala_delegaciiu_xebeiskogo_universiteta_inostrannyx_iazykov_knr",
+        "https://synergy.ru/about/blog/studenty_masterskoi_aleksandra_moxova_pokazali_diplomnyi_spektakl",
+        "https://synergy.ru/about/blog/studenty_kolledza_izucili_cifrovuiu_infrastrukturu_moskvy_na_vystavke_na_vdnx",
+        "https://synergy.ru/about/blog/studentam_kolledza_rasskazali_o_kiberugrozax_i_metodax_zashhity",
+        "https://synergy.ru/about/blog/student_fakulteta_sporta_zabil_gol_v_matce_sbornoi_rossii_po_futbolu",
+        "https://synergy.ru/about/blog/studenty_kolledza_sinergiia_osvoili_osnovy_upravleniia_bpla",
+        "https://synergy.ru/about/blog/komanda_studentov_fakulteta_it_zaniala_i_mesto_v_olimpiade_it_planeta_2026",
+        "https://synergy.ru/about/blog/student_sinergii_daniel_tebloev_zavoeval_serebro_na_cempionate_mira_po_borbe_v_brazilii"
+      ],
+      "recent_count": 25
+    },
+    {
+      "name": "Distant-college (НСПК)",
+      "homepage_analysis": {
+        "url": "https://distant-college.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [
+        "https://distant-college.ru/news/oge-ne-sdast-a-v-kolledzh-da",
+        "https://distant-college.ru/news/priemy-specialistov-uchebnogo-otdela-chtoby-uspevat-bolshe",
+        "https://distant-college.ru/news/den-socialnogo-rabotnika-kogda-pomosh-stanovitsya-delom-zhizni",
+        "https://distant-college.ru/news/dva-abiturienta-dve-skidki-vygodnyj-start-dlya-druzej-v-nspk",
+        "https://distant-college.ru/news/ot-sozdaniya-kukol-k-art-terapii-kak-v-50-let-prevratit-zhiznennyj-opyt-v-pomogayushuyu-professiyu",
+        "https://distant-college.ru/news/kogda-ucheba-ne-vdohnovlyaet-kak-provesti-leto-bez-stressa-i-podgotovitsya-k-budushemu",
+        "https://distant-college.ru/news/ekonomte-god-obucheniya-s-nspk-bez-poteri-kachestva",
+        "https://distant-college.ru/news/5-neudobnyh-voprosov-i-chestnye-otvety-na-nih",
+        "https://distant-college.ru/news/kak-ne-poteryat-god-uchas-zaochno",
+        "https://distant-college.ru/news/ot-studentki-do-sotrudnicy-kak-alita-nashla-svoe-prizvanie-v-nspk",
+        "https://distant-college.ru/news/uchitsya-iz-svoej-komnaty-realno",
+        "https://distant-college.ru/news/otvechaet-klientskij-servis",
+        "https://distant-college.ru/news/zakrojte-vopros-postupleniya-za-dve-nedeli-i-zabudte-o-letnem-azhiotazhe",
+        "https://distant-college.ru/news/bez-dopolnitelnyh-zatrat-i-s-podderzhkoj-specialistov-kak-prohodit-start-ucheby-v-nspk",
+        "https://distant-college.ru/news/nagrad-mnogo-ne-byvaet-nspk-snova-v-chisle-pobeditelej",
+        "https://distant-college.ru/news/poka-vse-sdayut-oge-mozhno-reshit-kuda-postupat",
+        "https://distant-college.ru/news/zhdat-neobyazatelno-pochemu-stoit-zaklyuchit-dogovor-vesnoj",
+        "https://distant-college.ru/news/5-navykov-kotorym-redko-uchat-no-bez-nih-ne-postroit-kareru",
+        "https://distant-college.ru/news/kompaniya-akademsiti-podpisala-soglashenie-o-sotrudnichestve",
+        "https://distant-college.ru/news/minimalnye-i-prokhodnye-bally-ege-po-fizike",
+        "https://distant-college.ru/news/kak-najti-sebya-kogda-vokrug-sporyat-roditeli-uchitelya-i-kolledzhi",
+        "https://distant-college.ru/news/pravila-peresdachi-ege-v-2024-godu",
+        "https://distant-college.ru/news/kak-postupit-v-vuz-bez-ege-cherez-kolledzh-instrukciya-dlya-samyh-celeustremlennyh",
+        "https://distant-college.ru/news/kak-prodolzhit-obuchenie-esli-nuzhno-pereehat-istoriya-kariny-studentki-kotoraya-ne-sdalas",
+        "https://distant-college.ru/news/3-mifa-o-prohozhdenii-praktiki-v-kolledzhe",
+        "https://distant-college.ru/news/minimalnyj-ball-ege-po-anglijskomu-yazyku",
+        "https://distant-college.ru/news/chto-mozhno-delat-posle-kolledzha-tri-puti-vypusknika-nspk",
+        "https://distant-college.ru/news/peresdacha-ege-v-2024-godu-komu-dostupna-kogda-prohodit-kak-podat-dokumenty",
+        "https://distant-college.ru/news/minimalnye-bally-po-russkomu-yazyku",
+        "https://distant-college.ru/news/nizkie-bally-ege-chto-delat-kuda-postupat"
+      ],
+      "recent_count": 100
+    },
+    {
+      "name": "NIIDPO",
+      "homepage_analysis": {
+        "url": "https://niidpo.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "VuzoPedia SPO",
+      "homepage_analysis": {
+        "error": "HTTPSConnectionPool(host='vuzopedia.ru', port=443): Read timed out. (read timeout=30)"
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    }
+  ]
+}
