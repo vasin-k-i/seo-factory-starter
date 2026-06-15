@@ -5,8 +5,8 @@ name: seo-agent · M1 semantic collector
 # Cron: воскресенье 01:00 UTC = 04:00 МСК (за 5ч до content-factory в понедельник).
 
 on:
-  schedule:
-    - cron: "0 1 * * 0"
+  # Запуск по расписанию отключён — репо-шаблон не должен гонять свои кроны.
+  # Включайте `schedule` после настройки секретов и конфига под свой сайт.
   workflow_dispatch:
     inputs:
       days:
