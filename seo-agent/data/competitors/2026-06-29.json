@@ -1,0 +1,118 @@
+{
+  "date": "2026-06-29",
+  "competitors": [
+    {
+      "name": "Synergy",
+      "homepage_analysis": {
+        "url": "https://synergy.ru/about/education_articles/kolledzh/",
+        "status": 200,
+        "title": "Статьи «Колледж». | Университет СИНЕРГИЯ",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 48,
+        "links_count": 189,
+        "json_ld_types": [],
+        "word_count": 780
+      },
+      "recent_urls": [
+        "https://synergy.ru/about/blog/studentka_medicinskogo_fakulteta_predlozila_puti_borby_so_skrytoi_lekarstvennoi_zavisimostiu",
+        "https://synergy.ru/about/blog/fakultet_it_i_infotaktika_razrabotaiut_sovmestnye_obrazovatelnye_programmy",
+        "https://synergy.ru/about/blog/bolee_150_socrabotnikov_samarskoi_oblasti_polucili_besplatnyi_dostup_k_programmam_dpo_ot_sinergii",
+        "https://synergy.ru/about/blog/sinergiia_vystupila_partnerom_prosvetitelskogo_proekta_bogoslovie_so_zvezdami",
+        "https://synergy.ru/about/blog/naucnyi_rukovoditel_universiteta_sinergiia_predstavil_proekty_fgos_po_napravleniiu_predprinimatelstvo",
+        "https://synergy.ru/about/blog/na_fakultete_dizaina_i_reklamy_otkrylas_vystavka_studenceskix_proektov_krossovok",
+        "https://synergy.ru/about/blog/studenty_fakulteta_igrovoi_industrii_i_kibersporta_stali_cempionami_mira_po_counter_strike_2",
+        "https://synergy.ru/about/blog/lesta_igry_i_fakultet_it_zakliucili_soglasenie_o_sotrudnicestve",
+        "https://synergy.ru/about/blog/vadim_lobov_rasskazal_kak_sinergiia_pomogaet_veteranam_svo_polucit_novuiu_professiiu_i_vernutsia_k_mirnoi_zizni",
+        "https://synergy.ru/about/blog/sinergiia_predstavila_akademiiu_umnogo_bloginga_dlia_detei_na_topfeste_v_luznikax",
+        "https://synergy.ru/about/blog/student_sinergii_daniel_tebloev_zavoeval_serebro_na_cempionate_mira_po_borbe_v_brazilii",
+        "https://synergy.ru/about/blog/vypuskniki_fakulteta_sporta_sinergii_v_sostave_karoliny_zavoevali_kubok_stenli",
+        "https://synergy.ru/about/blog/komanda_studentov_fakulteta_it_zaniala_i_mesto_v_olimpiade_it_planeta_2026",
+        "https://synergy.ru/about/blog/opros_sinergii_studenty_rasskazali_kak_otnosiatsia_k_strogim_prepodavateliam",
+        "https://synergy.ru/about/blog/prepodavatel_fakulteta_lingvistiki_vystupila_na_festivale_krasnaia_ploshhad",
+        "https://synergy.ru/about/blog/akter_aleksandr_moxov_nabiraet_kurs_na_fakultete_kino_universiteta_sinergiia",
+        "https://synergy.ru/about/blog/studentki_fakulteta_pedagogiki_oderzali_pobedu_na_olimpiade_po_perevodu_poeticeskix_tekstov",
+        "https://synergy.ru/about/blog/spektakl_pedagoga_fakulteta_kino_universiteta_sinergiia_polucil_zolotuiu_masku",
+        "https://synergy.ru/about/blog/studenty_medicinskogo_fakulteta_zaniali_trete_mesto_na_konkurse_naucnyx_rabot_medskan",
+        "https://synergy.ru/about/blog/sinergiia_dogovorilas_o_razvitii_obrazovatelnyx_programm_dlia_sotrudnikov_silovyx_vedomstv_baskirii",
+        "https://synergy.ru/about/blog/universitet_sinergiia_predstavil_obrazovatelnyi_stend_na_pmiuf_2026",
+        "https://synergy.ru/about/blog/sinergiia_vystupit_partnerom_foruma_dikorosy_v_novosibirske"
+      ],
+      "recent_count": 22
+    },
+    {
+      "name": "Distant-college (НСПК)",
+      "homepage_analysis": {
+        "url": "https://distant-college.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [
+        "https://distant-college.ru/news/kak-vybrat-kolledzh-posle-9-klassa",
+        "https://distant-college.ru/news/chto-budet-esli-ne-sdat-oge",
+        "https://distant-college.ru/news/kakoj-prokhodnoj-ball-na-ege-tabliczy-pravila-rascheta",
+        "https://distant-college.ru/news/kak-vybrat-kolledzh-dlya-postupleniya",
+        "https://distant-college.ru/news/kakoj-kolledzh-vybrat-malchiku-i-devochke-posle-9-klassa",
+        "https://distant-college.ru/news/kak-vybrat-kolledzh-posle-11-klassa",
+        "https://distant-college.ru/news/kak-proverit-kolledzh-pered-postupleniem",
+        "https://distant-college.ru/news/priemy-specialistov-uchebnogo-otdela-chtoby-uspevat-bolshe",
+        "https://distant-college.ru/news/oge-ne-sdast-a-v-kolledzh-da",
+        "https://distant-college.ru/news/den-socialnogo-rabotnika-kogda-pomosh-stanovitsya-delom-zhizni",
+        "https://distant-college.ru/news/dva-abiturienta-dve-skidki-vygodnyj-start-dlya-druzej-v-nspk",
+        "https://distant-college.ru/news/ot-sozdaniya-kukol-k-art-terapii-kak-v-50-let-prevratit-zhiznennyj-opyt-v-pomogayushuyu-professiyu",
+        "https://distant-college.ru/news/kogda-ucheba-ne-vdohnovlyaet-kak-provesti-leto-bez-stressa-i-podgotovitsya-k-budushemu",
+        "https://distant-college.ru/news/ekonomte-god-obucheniya-s-nspk-bez-poteri-kachestva",
+        "https://distant-college.ru/news/5-neudobnyh-voprosov-i-chestnye-otvety-na-nih",
+        "https://distant-college.ru/news/ot-studentki-do-sotrudnicy-kak-alita-nashla-svoe-prizvanie-v-nspk",
+        "https://distant-college.ru/news/kak-ne-poteryat-god-uchas-zaochno",
+        "https://distant-college.ru/news/uchitsya-iz-svoej-komnaty-realno",
+        "https://distant-college.ru/news/otvechaet-klientskij-servis",
+        "https://distant-college.ru/news/bez-dopolnitelnyh-zatrat-i-s-podderzhkoj-specialistov-kak-prohodit-start-ucheby-v-nspk",
+        "https://distant-college.ru/news/zakrojte-vopros-postupleniya-za-dve-nedeli-i-zabudte-o-letnem-azhiotazhe",
+        "https://distant-college.ru/news/nagrad-mnogo-ne-byvaet-nspk-snova-v-chisle-pobeditelej",
+        "https://distant-college.ru/news/poka-vse-sdayut-oge-mozhno-reshit-kuda-postupat",
+        "https://distant-college.ru/news/zhdat-neobyazatelno-pochemu-stoit-zaklyuchit-dogovor-vesnoj",
+        "https://distant-college.ru/news/5-navykov-kotorym-redko-uchat-no-bez-nih-ne-postroit-kareru",
+        "https://distant-college.ru/news/kompaniya-akademsiti-podpisala-soglashenie-o-sotrudnichestve",
+        "https://distant-college.ru/news/minimalnye-i-prokhodnye-bally-ege-po-fizike",
+        "https://distant-college.ru/news/kak-najti-sebya-kogda-vokrug-sporyat-roditeli-uchitelya-i-kolledzhi",
+        "https://distant-college.ru/news/kak-postupit-v-vuz-bez-ege-cherez-kolledzh-instrukciya-dlya-samyh-celeustremlennyh",
+        "https://distant-college.ru/news/kak-prodolzhit-obuchenie-esli-nuzhno-pereehat-istoriya-kariny-studentki-kotoraya-ne-sdalas"
+      ],
+      "recent_count": 100
+    },
+    {
+      "name": "NIIDPO",
+      "homepage_analysis": {
+        "url": "https://niidpo.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "VuzoPedia SPO",
+      "homepage_analysis": {
+        "error": "HTTP 403"
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    }
+  ]
+}
