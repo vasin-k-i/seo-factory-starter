@@ -1,0 +1,84 @@
+{
+  "date": "2026-07-06",
+  "competitors": [
+    {
+      "name": "Synergy",
+      "homepage_analysis": {
+        "url": "https://synergy.ru/about/education_articles/kolledzh/",
+        "status": 200,
+        "title": "Статьи «Колледж». | Университет СИНЕРГИЯ",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 46,
+        "links_count": 189,
+        "json_ld_types": [],
+        "word_count": 770
+      },
+      "recent_urls": [
+        "https://synergy.ru/about/blog/fakultet_dizaina_i_reklamy_predstavil_tvorceskuiu_ploshhadku_na_festivale_rus_svet",
+        "https://synergy.ru/about/blog/na_fakultete_dizaina_i_reklamy_otkrylas_vystavka_studenceskix_proektov_krossovok",
+        "https://synergy.ru/about/blog/studenty_fakulteta_igrovoi_industrii_i_kibersporta_stali_cempionami_mira_po_counter_strike_2",
+        "https://synergy.ru/about/blog/vadim_lobov_rasskazal_kak_sinergiia_pomogaet_veteranam_svo_polucit_novuiu_professiiu_i_vernutsia_k_mirnoi_zizni",
+        "https://synergy.ru/about/blog/fakultet_kino_i_televideniia_sinergii_predstavil_immersivnyi_spektakl_o_bolsevskoi_trudovoi_kommune",
+        "https://synergy.ru/about/blog/universitet_sinergiia_otkryvaet_kosmiceskuiu_laboratoriiu_dlia_skolnikov_irkutskoi_oblasti",
+        "https://synergy.ru/about/blog/universitet_sinergiia_vystupit_partnerom_gastroforuma_v_sibiri_est",
+        "https://synergy.ru/about/blog/lesta_igry_i_fakultet_it_zakliucili_soglasenie_o_sotrudnicestve",
+        "https://synergy.ru/about/blog/opros_sinergii_tret_oprosennyx_studentov_v_rossii_gotovy_rabotat_vozatym_v_detskom_lagere",
+        "https://synergy.ru/about/blog/spektakl_pedagoga_fakulteta_kino_universiteta_sinergiia_polucil_zolotuiu_masku",
+        "https://synergy.ru/about/blog/studenty_medicinskogo_fakulteta_zaniali_trete_mesto_na_konkurse_naucnyx_rabot_medskan",
+        "https://synergy.ru/about/blog/sinergiia_dogovorilas_o_razvitii_obrazovatelnyx_programm_dlia_sotrudnikov_silovyx_vedomstv_baskirii",
+        "https://synergy.ru/about/blog/universitet_sinergiia_predstavil_obrazovatelnyi_stend_na_pmiuf_2026",
+        "https://synergy.ru/about/blog/sinergiia_vystupit_partnerom_foruma_dikorosy_v_novosibirske",
+        "https://synergy.ru/about/blog/v_kolledze_sinergiia_prosel_prazdnicnyi_koncert_ko_dniu_molodezi",
+        "https://synergy.ru/about/blog/sinergiia_i_kitaiskii_universitet_czimei_dogovorilis_o_razvitii_sovmestnyx_obrazovatelnyx_programm",
+        "https://synergy.ru/about/blog/paraalpinist_rustam_nabiev_rasskazal_studentam_sinergii_o_svoix_planax_na_paralimpiadu_2032",
+        "https://synergy.ru/about/blog/programma_razvitiia_studentov_sinergiia_vozmoznostei_otkryla_nabor_na_novye_proekty",
+        "https://synergy.ru/about/blog/sovetnik_prorektora_sinergii_vystupil_na_sobranii_rossiiskoi_associacii_mezdunarodnogo_prava"
+      ],
+      "recent_count": 19
+    },
+    {
+      "name": "Distant-college (НСПК)",
+      "homepage_analysis": {
+        "url": "https://distant-college.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "NIIDPO",
+      "homepage_analysis": {
+        "url": "https://niidpo.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "VuzoPedia SPO",
+      "homepage_analysis": {
+        "error": "HTTP 403"
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    }
+  ]
+}
