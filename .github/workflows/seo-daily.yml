@@ -5,8 +5,8 @@ name: seo-agent · daily morning digest
 # Шаги: быстрый мини-аудит M2 (без PageSpeed) → сборка дайджеста → Telegram.
 
 on:
-  schedule:
-    - cron: "30 5 * * *"
+  # Запуск по расписанию отключён — репо-шаблон не должен гонять свои кроны.
+  # Включайте `schedule` после настройки секретов и конфига под свой сайт.
   workflow_dispatch:
     inputs:
       dry_run:
