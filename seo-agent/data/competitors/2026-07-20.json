@@ -1,0 +1,64 @@
+{
+  "date": "2026-07-20",
+  "competitors": [
+    {
+      "name": "Synergy",
+      "homepage_analysis": {
+        "url": "https://synergy.ru/about/education_articles/kolledzh/",
+        "status": 200,
+        "title": "Статьи «Колледж». | Университет СИНЕРГИЯ",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 46,
+        "links_count": 189,
+        "json_ld_types": [],
+        "word_count": 760
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "Distant-college (НСПК)",
+      "homepage_analysis": {
+        "url": "https://distant-college.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "NIIDPO",
+      "homepage_analysis": {
+        "url": "https://niidpo.ru/",
+        "status": 200,
+        "title": "ÐÑ Ð½Ðµ ÑÐ¾Ð±Ð¾Ñ?",
+        "h1": "",
+        "h2_count": 0,
+        "h2_examples": [],
+        "img_count": 2,
+        "links_count": 4,
+        "json_ld_types": [],
+        "word_count": 0
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    },
+    {
+      "name": "VuzoPedia SPO",
+      "homepage_analysis": {
+        "error": "HTTP 403"
+      },
+      "recent_urls": [],
+      "recent_count": 0
+    }
+  ]
+}
