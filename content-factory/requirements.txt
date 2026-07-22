@@ -3,3 +3,5 @@ python-dotenv>=1.0.0
 requests>=2.31.0
 PyYAML>=6.0
 python-slugify>=8.0.0
+# L2 «редакторский обгон» (реверс-инжиниринг топ-10 выдачи) — нужен только при L2_COMPETITIVE=1
+beautifulsoup4>=4.12.0
