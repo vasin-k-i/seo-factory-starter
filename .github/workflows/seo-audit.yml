@@ -5,8 +5,8 @@ name: seo-agent · M2 tech audit
 # Также можно запустить вручную из Actions tab.
 
 on:
-  schedule:
-    - cron: "0 4 * * 6"
+  # Запуск по расписанию отключён — репо-шаблон не должен гонять свои кроны.
+  # Включайте `schedule` после настройки секретов и M2_SITE_ROOT под свой сайт.
   workflow_dispatch:
     inputs:
       dry_run:

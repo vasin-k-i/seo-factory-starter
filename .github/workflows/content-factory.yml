@@ -5,8 +5,8 @@ name: content-factory
 # Также можно запустить вручную из Actions tab.
 
 on:
-  schedule:
-    - cron: "0 6 * * *"
+  # Запуск по расписанию отключён — репо-шаблон не должен гонять свои кроны.
+  # Включайте `schedule` после настройки секретов и наполнения topics_backlog.csv.
   workflow_dispatch:
     inputs:
       articles_per_day:

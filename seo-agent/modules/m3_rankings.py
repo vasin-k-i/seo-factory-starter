@@ -146,7 +146,14 @@ def save_seeds(seeds: list[str]) -> Path:
 def load_seeds() -> list[str]:
     if not SEEDS_FILE.exists():
         return []
-    return json.loads(SEEDS_FILE.read_text(encoding="utf-8")).get("keywords", [])
+    data = json.loads(SEEDS_FILE.read_text(encoding="utf-8"))
+    # Совместимость форматов: save_seeds() пишет {"updated": ..., "keywords": [...]},
+    # но в шаблоне/старых данных файл мог быть простым списком ключей.
+    if isinstance(data, dict):
+        return data.get("keywords", [])
+    if isinstance(data, list):
+        return data
+    return []
 
 
 # ───── GSC: средние позиции ────────────────────────────────────────
