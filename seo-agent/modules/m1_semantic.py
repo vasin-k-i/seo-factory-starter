@@ -52,6 +52,17 @@ BACKLOG_CSV = CONTENT_FACTORY / "topics_backlog.csv"
 USED_CSV = CONTENT_FACTORY / "topics_used.csv"
 SEMANTIC_DIR = THIS_DIR.parent / "data" / "semantic"
 
+# Учёт расхода LLM. Модуль лежит в content-factory/ — берём ОТТУДА, а не копией
+# рядом: леджер на весь пакет должен быть один файл
+# (content-factory/data/budget/usage.jsonl), иначе расход придётся складывать
+# из двух мест. Путь добавляем так же, как выше добавлен корень seo-agent.
+if str(REPO_ROOT / "content-factory") not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT / "content-factory"))
+try:
+    import usage_ledger  # noqa: E402
+except ImportError:  # content-factory/ рядом нет — работаем без учёта
+    usage_ledger = None
+
 # Категории, в которые M1 может класть темы — должны совпадать с content-factory.
 KNOWN_CATEGORIES = {"admission", "career", "dictionary", "extra", "preschool", "primary", "profession"}
 
@@ -286,16 +297,21 @@ def cluster_with_claude(queries: dict[str, QueryStat], max_topics: int = MAX_NEW
         return []
 
     client = anthropic.Anthropic(api_key=api_key)
+    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
     log.info("Claude кластеризация %d query (отобрано из %d)...", len(sorted_qs), len(queries))
     try:
         response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+            model=model,
             max_tokens=8000,
             messages=[{"role": "user", "content": user_prompt}],
         )
     except Exception as e:
         log.error("Claude API error: %s", e)
         return []
+
+    if usage_ledger is not None:
+        usage_ledger.record_response(model, getattr(response, "usage", None),
+                                     note="M1: кластеризация семантики")
 
     text = response.content[0].text.strip() if response.content else ""
     # Иногда модель оборачивает в ```json — снимаем

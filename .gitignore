@@ -14,6 +14,11 @@ venv/
 
 # Логи и шумные снимки данных
 content-factory/logs/
+
+# Рантайм-состояние фабрики: свой у каждого форка, в шаблоне ему делать нечего
+content-factory/data/budget/
+content-factory/data/circuit_breaker.json
+content-factory/data/.fill.lock
 seo-agent/data/rankings/*.json
 seo-agent/data/eeat/*.json
 !seo-agent/data/rankings/tracked-keywords.json

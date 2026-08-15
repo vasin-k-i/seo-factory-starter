@@ -19,9 +19,23 @@ import json
 import logging
 import os
 import re
+import sys
+from pathlib import Path
 from typing import Optional
 
 log = logging.getLogger(__name__)
+
+# Учёт расхода LLM. Модуль лежит в content-factory/ — берём ОТТУДА, а не копией
+# рядом: леджер на весь пакет должен быть один файл
+# (content-factory/data/budget/usage.jsonl), иначе расход придётся складывать
+# из двух мест.
+_CONTENT_FACTORY = Path(__file__).resolve().parent.parent.parent / "content-factory"
+if str(_CONTENT_FACTORY) not in sys.path:
+    sys.path.insert(0, str(_CONTENT_FACTORY))
+try:
+    import usage_ledger
+except ImportError:  # content-factory/ рядом нет — работаем без учёта
+    usage_ledger = None
 
 SYSTEM_PROMPT = (
     "Ты — опытный SEO-стратег, который ведёт сайт клиента и каждое утро пишет ему "
@@ -134,9 +148,10 @@ def strategist_advice(site: str, period: str, payload: dict,
     )
 
     client = anthropic.Anthropic(api_key=api_key)
+    model = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
     try:
         response = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6"),
+            model=model,
             max_tokens=1200,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_prompt}],
@@ -144,6 +159,10 @@ def strategist_advice(site: str, period: str, payload: dict,
     except Exception as e:
         log.warning("Claude (стратег) недоступен: %s", e)
         return ""
+
+    if usage_ledger is not None:
+        usage_ledger.record_response(model, getattr(response, "usage", None),
+                                     note=f"стратег: {site} / {period}")
 
     text = response.content[0].text.strip() if response.content else ""
     # На всякий случай снимаем markdown-обёртку, если модель её добавила.

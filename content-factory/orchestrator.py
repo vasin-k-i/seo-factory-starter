@@ -25,6 +25,9 @@ from typing import Optional
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
+import circuit_breaker
+import queue_lease
+import usage_ledger
 from send_email import send_report
 
 # ── Настройка ─────────────────────────────────────────────────────────
@@ -39,6 +42,12 @@ DATA.mkdir(exist_ok=True)
 
 BACKLOG_PATH = DATA / "topics_backlog.csv"
 USED_PATH = DATA / "topics_used.csv"
+
+# Лок на очередь тем: прогон читает бэклог в начале и переписывает оба CSV
+# в конце. Два прогона внахлёст возьмут одни и те же темы и затрут пометки
+# друг друга. Лежит в data/ рядом с остальным рантайм-состоянием
+# (budget/usage.jsonl, circuit_breaker.json).
+LOCK_PATH = DATA / ".fill.lock"
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
@@ -201,6 +210,43 @@ def read_prompt(name: str) -> str:
     return (PROMPTS / name).read_text(encoding="utf-8")
 
 
+# ── Учёт расхода (usage_ledger) ───────────────────────────────────────
+# Каждый вызов Claude пишется строкой в data/budget/usage.jsonl. Это ТОЛЬКО
+# видимость: сколько токенов и долларов ушло за день/неделю, во что обходится
+# одна статья. Никаких лимитов и остановок тут нет — см. usage_ledger.py.
+
+def _usage_fields(usage) -> tuple[int, int, int, int]:
+    """(вход, выход, чтение кэша, запись кэша) из объекта usage ответа Anthropic."""
+    if usage is None:
+        return 0, 0, 0, 0
+    return (
+        getattr(usage, "input_tokens", 0) or 0,
+        getattr(usage, "output_tokens", 0) or 0,
+        getattr(usage, "cache_read_input_tokens", 0) or 0,
+        getattr(usage, "cache_creation_input_tokens", 0) or 0,
+    )
+
+
+def _record_usage(input_tokens: int, output_tokens: int,
+                  cache_read: int = 0, cache_creation: int = 0,
+                  batch: bool = False, note: str = "") -> None:
+    """Дописывает расход одного вызова (или одного батча) в леджер."""
+    usage_ledger.record(
+        model=MODEL,
+        backend="anthropic-batch" if batch else "anthropic-api",
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_read_tokens=cache_read,
+        cache_creation_tokens=cache_creation,
+        cost_usd=usage_ledger.estimate_cost(
+            MODEL, input_tokens, output_tokens, cache_read, cache_creation, batch=batch,
+        ),
+        # Обычный API-ключ — это реальные деньги по счётчику.
+        metered=True,
+        note=note,
+    )
+
+
 def call_claude(system: str, user: str, max_tokens: int = 8000) -> str:
     """Один вызов Claude Sonnet с retry на сетевые ошибки."""
     last_err = None
@@ -212,10 +258,23 @@ def call_claude(system: str, user: str, max_tokens: int = 8000) -> str:
                 system=system,
                 messages=[{"role": "user", "content": user}],
             )
+            inp, out, c_read, c_write = _usage_fields(getattr(resp, "usage", None))
+            _record_usage(inp, out, c_read, c_write)
             return resp.content[0].text
         except Exception as e:  # noqa: BLE001
             last_err = e
             log.warning("Claude call failed (attempt %d/3): %s", attempt + 1, e)
+            # Предохранитель от рантвея: считаем ВСЕ повторы за сутки по фабрике.
+            # Штатный день — единицы повторов; десятки означают, что что-то
+            # залипло и прогон жжёт токены впустую.
+            if circuit_breaker.record_retry():
+                log.error("предохранитель: повторов за сутки больше %d — прекращаю "
+                          "(счётчик и сброс: content-factory/data/circuit_breaker.json)",
+                          circuit_breaker.MAX_RETRY_LOOP)
+                raise RuntimeError(
+                    f"circuit breaker: превышен дневной лимит повторов "
+                    f"({circuit_breaker.MAX_RETRY_LOOP}); последняя ошибка: {last_err}"
+                ) from last_err
             time.sleep(2 ** attempt)
     raise RuntimeError(f"Claude call failed after 3 attempts: {last_err}")
 
@@ -309,14 +368,27 @@ def run_stage_batch(label: str, system_text: str, jobs: list[tuple[str, str]],
         waited += BATCH_POLL_INTERVAL
 
     out: dict[str, Optional[str]] = {}
+    # Расход по батчу. Anthropic отдаёт usage на КАЖДЫЙ успешный item
+    # (r.result.message.usage), но писать в леджер по строке на статью — шум:
+    # складываем и пишем одну строку на всю стадию батча.
+    tok_in = tok_out = tok_cache_read = tok_cache_write = 0
     for r in client.messages.batches.results(batch.id):
         if r.result.type == "succeeded":
             msg = r.result.message
             out[r.custom_id] = next((blk.text for blk in msg.content if blk.type == "text"), "")
+            i, o, cr, cw = _usage_fields(getattr(msg, "usage", None))
+            tok_in += i
+            tok_out += o
+            tok_cache_read += cr
+            tok_cache_write += cw
         else:
             out[r.custom_id] = None
             log.warning("Batch[%s]: %s → %s", label, r.custom_id, r.result.type)
     ok = sum(1 for v in out.values() if v)
+    # batch=True → цена считается с батчевой скидкой −50%.
+    _record_usage(tok_in, tok_out, tok_cache_read, tok_cache_write, batch=True,
+                  note=f"batch mode, агрегированная запись: стадия {label}, "
+                       f"{ok}/{len(requests)} успешно")
     log.info("Batch[%s]: готово — %d/%d успешно", label, ok, len(requests))
     return out
 
@@ -548,7 +620,8 @@ def strip_heading_anchors(mdx: str) -> tuple[str, int]:
     return cleaned, n
 
 
-def main() -> int:
+def _run() -> int:
+    """Тело прогона. Вызывается из main() уже под локом на очередь тем."""
     started = datetime.now(timezone.utc)
     publish_date = datetime.now().strftime("%Y-%m-%d")
     report = RunReport(started_at=started)
@@ -644,6 +717,12 @@ def main() -> int:
 
     report.finished_at = datetime.now(timezone.utc)
 
+    # Сколько сожгли — из леджера (data/budget/usage.jsonl). Строчка в логе,
+    # чтобы расход было видно сразу, а не только в панели.
+    spent = usage_ledger.today_summary()
+    log.info("расход за сегодня: %d вызовов, %d вх. / %d вых. токенов, $%.4f",
+             spent["calls"], spent["input_tokens"], spent["output_tokens"], spent["cost_usd"])
+
     # email-отчёт
     send_report(
         subject=f"[content-factory] {publish_date}: {len(written_files)}/{len(topics)} статей",
@@ -652,6 +731,21 @@ def main() -> int:
 
     failed = sum(1 for r in report.results if r.status == "failed")
     return 0 if failed == 0 else 1
+
+
+def main() -> int:
+    """Точка входа: берём лок на очередь тем и только потом работаем.
+
+    Лок неблокирующий: если прогон уже идёт (крон + ручной запуск, или вчерашний
+    ещё не закончился) — тихо выходим с кодом 0, а не встаём во вторую очередь.
+    Ждать нечего: бэклог всё равно один, второй прогон писал бы поверх первого.
+    """
+    with queue_lease.acquire(LOCK_PATH) as acquired:
+        if not acquired:
+            print(f"[content-factory] другой прогон уже идёт ({LOCK_PATH}) — выхожу")
+            return 0
+        circuit_breaker.reset_if_new_day()
+        return _run()
 
 
 # ── Email HTML ────────────────────────────────────────────────────────
