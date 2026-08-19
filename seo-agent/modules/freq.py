@@ -60,7 +60,11 @@ SPEND_PATH = HOME_DIR / "spend.json"
 REGION_RU = 225
 DEFAULT_WS = "base"          # базовая частотность (широкое соответствие)
 ARSENKIN_BATCH = 300         # фраз за одну задачу; тот же гейт, что в arsenkin_api
-ARSENKIN_DAILY_UNITS = 2000  # потолок юнитов в сутки на все проекты
+ARSENKIN_DAILY_UNITS = 2000  # потолок юнитов в сутки на проект
+
+# Цены по ФАКТУ списаний, а не по прайсу (сверено 19.08.2026 по движению баланса).
+RUB_PER_XMLRIVER = 0.025     # и частотность, и страница выдачи стоят одинаково
+RUB_PER_ARSENKIN_UNIT = 0.025
 WORDSTAT_THROTTLE = 0.25
 
 
@@ -123,25 +127,69 @@ def save_cache(cache: dict) -> None:
     tmp.replace(CACHE_PATH)  # атомарно: параллельные заводы не порвут файл
 
 
+def project_name() -> str:
+    """Чей это расход. Явный `SEO_PROJECT` важнее, иначе — имя папки проекта.
+
+    Нужно, потому что лимит бывает не общий, а на конкретный сайт: например,
+    у партнёрского проекта с делёжкой выручки расход держат в жёстком потолке.
+    """
+    env = (os.environ.get("SEO_PROJECT") or "").strip()
+    if env:
+        return env
+    try:
+        return Path(__file__).resolve().parents[2].name
+    except IndexError:
+        return "unknown"
+
+
+def daily_rub_limit() -> float:
+    """Потолок трат в рублях за сутки на ЭТОТ проект. 0 = без лимита."""
+    raw = (os.environ.get("SEO_DAILY_RUB_LIMIT") or "").strip()
+    try:
+        return float(raw) if raw else 0.0
+    except ValueError:
+        return 0.0
+
+
 def _spend_today() -> dict:
     today = time.strftime("%Y-%m-%d")
+    blank = {"date": today, "projects": {}}
     if SPEND_PATH.exists():
         try:
             d = json.loads(SPEND_PATH.read_text(encoding="utf-8"))
             if d.get("date") == today:
+                d.setdefault("projects", {})
                 return d
         except json.JSONDecodeError:
             pass
-    return {"date": today, "arsenkin_units": 0, "wordstat_calls": 0}
+    return blank
 
 
-def _record_spend(*, units: int = 0, calls: int = 0) -> dict:
+def _proj_spend(d: dict | None = None) -> dict:
+    d = d or _spend_today()
+    return d["projects"].setdefault(
+        project_name(), {"arsenkin_units": 0, "wordstat_calls": 0,
+                         "xmlriver_calls": 0, "rub": 0.0})
+
+
+def _record_spend(*, units: int = 0, calls: int = 0, xr: int = 0, rub: float = 0.0) -> dict:
     d = _spend_today()
-    d["arsenkin_units"] += units
-    d["wordstat_calls"] += calls
+    p = _proj_spend(d)
+    p["arsenkin_units"] += units
+    p["wordstat_calls"] += calls
+    p["xmlriver_calls"] += xr
+    p["rub"] = round(p["rub"] + rub, 3)
     HOME_DIR.mkdir(parents=True, exist_ok=True)
     SPEND_PATH.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
     return d
+
+
+def rub_room() -> float:
+    """Сколько рублей ещё можно потратить сегодня. `inf`, если лимита нет."""
+    lim = daily_rub_limit()
+    if lim <= 0:
+        return float("inf")
+    return max(0.0, lim - _proj_spend()["rub"])
 
 
 # ── провайдер 1: Yandex Cloud Wordstat ───────────────────────────────────────
@@ -186,7 +234,7 @@ def _wordstat(phrases: list[str], region: int) -> dict[str, int]:
         out[ph] = int(str(resp.get("totalCount") or 0))
         time.sleep(WORDSTAT_THROTTLE)
     if out:
-        _record_spend(calls=len(out))
+        _record_spend(calls=len(out))   # Wordstat бесплатный, рубли не растут
     return out
 
 
@@ -214,6 +262,12 @@ def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
     key = (os.environ.get("XMLRIVER_KEY") or "").strip()
     if not user or not key or not phrases:
         return {}
+    room = rub_room()
+    if room < RUB_PER_XMLRIVER:
+        print(f"  [xmlriver] дневной лимит {daily_rub_limit()} ₽ на «{project_name()}» "
+              f"выбран — стоп")
+        return {}
+    phrases = phrases[:int(room / RUB_PER_XMLRIVER)]
 
     from urllib.parse import quote
 
@@ -251,6 +305,7 @@ def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
             break
         if val is not None:
             out[ph] = val
+            _record_spend(xr=1, rub=RUB_PER_XMLRIVER)
     return out
 
 
@@ -308,8 +363,14 @@ def _arsenkin(phrases: list[str], region: int, ws: str) -> dict[str, int]:
     if not token or not phrases:
         return {}
 
-    spent = _spend_today()["arsenkin_units"]
+    spent = _proj_spend()["arsenkin_units"]
     room = ARSENKIN_DAILY_UNITS - spent
+    rub = rub_room()
+    if rub < RUB_PER_ARSENKIN_UNIT:
+        print(f"  [arsenkin] дневной лимит {daily_rub_limit()} ₽ на «{project_name()}» "
+              f"выбран — стоп")
+        return {}
+    room = min(room, int(rub / RUB_PER_ARSENKIN_UNIT))
     if room <= 0:
         print(f"  [arsenkin] дневной потолок {ARSENKIN_DAILY_UNITS} юнитов выбран — стоп")
         return {}
@@ -367,7 +428,8 @@ def _arsenkin_batch(batch: list[str], region: int, ws: str, token: str) -> dict[
         val = (by_region or {}).get(str(region), {}).get(ws)
         if val is not None:
             out[ph] = int(val)
-    _record_spend(units=int(cost or len(batch)))
+    units = int(cost or len(batch))
+    _record_spend(units=units, rub=units * RUB_PER_ARSENKIN_UNIT)
     return out
 
 
@@ -454,10 +516,15 @@ def main() -> int:
 
     if args.stats:
         cache = load_cache()
-        sp = _spend_today()
+        d = _spend_today()
+        lim = daily_rub_limit()
         print(f"кэш: {len(cache)} фраз  ({CACHE_PATH})")
-        print(f"сегодня: Arsenkin {sp['arsenkin_units']}/{ARSENKIN_DAILY_UNITS} юнитов, "
-              f"Wordstat {sp['wordstat_calls']} вызовов")
+        print(f"проект: {project_name()}  лимит: {(str(lim) + ' ₽/сутки') if lim else 'без лимита'}")
+        if not d["projects"]:
+            print("сегодня трат не было")
+        for name, p in sorted(d["projects"].items()):
+            print(f"  {name:16} {p['rub']:>7.2f} ₽  ·  Arsenkin {p['arsenkin_units']} юн · "
+                  f"XMLRiver {p['xmlriver_calls']} · Wordstat {p['wordstat_calls']} (0 ₽)")
         return 0
 
     phrases = list(args.phrases)
