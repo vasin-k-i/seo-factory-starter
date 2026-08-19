@@ -342,7 +342,50 @@ def cluster_with_claude(queries: dict[str, QueryStat], max_topics: int = MAX_NEW
         valid_topics.append(t)
 
     log.info("Claude вернул %d валидных кластеров (из %d сырых)", len(valid_topics), len(topics))
-    return valid_topics[:max_topics]
+    valid_topics = valid_topics[:max_topics]
+    enrich_frequency(valid_topics)
+    return valid_topics
+
+
+def enrich_frequency(topics: list[dict]) -> None:
+    """Проставить темам реальную частотность Вордстата (было поле-заглушка `0`).
+
+    Модель НЕ знает частотностей и в `wordstat_frequency` возвращала ноль — тема
+    приоритезировалась по показам из Вебмастера/GSC, то есть только по тому, где сайт
+    УЖЕ показывается. Спрос, которого мы ещё не касались, оставался невидимым.
+
+    Источники подключаются в `modules/freq.py` (кэш → Wordstat → XMLRiver → Arsenkin).
+    Нет ни одного ключа — молча остаётся 0, поведение как раньше.
+
+    ⚠️ Отсутствие фразы в ответе — это «не замерили» (кончилась квота), а НЕ «спроса нет».
+    Такие темы оставляем с 0 и НЕ понижаем в приоритете: иначе тихо выкинем живой спрос.
+    """
+    if not topics:
+        return
+    try:
+        from freq import frequency
+    except ImportError:
+        return
+
+    phrases = [t.get("primary_keyword", "").strip() for t in topics]
+    phrases = [p for p in phrases if p]
+    if not phrases:
+        return
+    try:
+        res = frequency(phrases, allow_paid=True, verbose=False)
+    except Exception as e:  # noqa: BLE001 — частотность не должна ронять сбор семантики
+        log.warning("Частотность не собрана (%s) — темы уйдут с wordstat_frequency=0", e)
+        return
+
+    from freq import normalize
+
+    measured = 0
+    for t in topics:
+        key = normalize(t.get("primary_keyword", ""))
+        if key in res:
+            t["wordstat_frequency"] = res[key]["freq"]
+            measured += 1
+    log.info("Частотность проставлена у %d из %d тем", measured, len(topics))
 
 
 # ───── Запись в backlog ─────────────────────────────────────────────
