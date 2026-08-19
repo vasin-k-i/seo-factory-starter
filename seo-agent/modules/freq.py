@@ -239,7 +239,7 @@ def _wordstat(phrases: list[str], region: int) -> dict[str, int]:
 
 
 # ── провайдер 2: XMLRiver (Wordstat New) ─────────────────────────────────────
-def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
+def _xmlriver(phrases: list[str], region: int, ws: str = DEFAULT_WS) -> dict[str, int]:
     """XMLRiver Wordstat New: по одной фразе за запрос, частота в TotalValue.
 
     Эндпоинт `wordstat/new/json`, `pagetype=history` — вкладка «История»,
@@ -267,14 +267,25 @@ def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
         print(f"  [xmlriver] дневной лимит {daily_rub_limit()} ₽ на «{project_name()}» "
               f"выбран — стоп")
         return {}
-    phrases = phrases[:int(room / RUB_PER_XMLRIVER)]
+    # ⚠️ room == inf, когда лимит не задан (а это большинство проектов).
+    # int(inf) роняет модуль с OverflowError — резать список нужно только при живом лимите.
+    if room != float("inf"):
+        phrases = phrases[:int(room / RUB_PER_XMLRIVER)]
 
     from urllib.parse import quote
 
     out: dict[str, int] = {}
     for ph in phrases:
+        # Вид частотности у XMLRiver задаётся ОПЕРАТОРАМИ В САМОЙ ФРАЗЕ, а не отдельным
+        # полем (в отличие от Арсенкина с его ws=[...]). Через Yandex Cloud операторы
+        # недоступны вовсе — там только широкая, поэтому quoted/exact можно получить
+        # ТОЛЬКО здесь или у Арсенкина.
+        # ⚠️ Операторы навешиваем после normalize(): он вырезает кавычки и «!», потому что
+        # на них падает Арсенкин. Порядок обратный — и оператор уедет в мусор.
+        q = {"base": ph, "quoted": f'"{ph}"', "overal": f'"{ph}"',
+             "exact": f'"!{ph}"'}.get(ws, ph)
         url = (f"http://xmlriver.com/wordstat/new/json?user={user}&key={key}"
-               f"&query={quote(ph)}&regions={region}&device=&pagetype=history")
+               f"&query={quote(q)}&regions={region}&device=&pagetype=history")
         # ⚠️ Сервис регулярно отдаёт временное «Выполните перезапрос. Ответ от поисковой
         # системы не получен» (code 500) — это НЕ отказ, а просьба повторить. Без ретрая
         # фраза молча выпадает из замера.
@@ -370,7 +381,8 @@ def _arsenkin(phrases: list[str], region: int, ws: str) -> dict[str, int]:
         print(f"  [arsenkin] дневной лимит {daily_rub_limit()} ₽ на «{project_name()}» "
               f"выбран — стоп")
         return {}
-    room = min(room, int(rub / RUB_PER_ARSENKIN_UNIT))
+    if rub != float("inf"):   # без лимита int(inf) уронил бы модуль
+        room = min(room, int(rub / RUB_PER_ARSENKIN_UNIT))
     if room <= 0:
         print(f"  [arsenkin] дневной потолок {ARSENKIN_DAILY_UNITS} юнитов выбран — стоп")
         return {}
@@ -471,7 +483,7 @@ def frequency(phrases, *, region: int = REGION_RU, ws: str = DEFAULT_WS,
         # XMLRiver раньше Арсенкина: цена та же (~25 ₽/1000), но тот же ключ
         # открывает живую выдачу Яндекса/Google, так что расход идёт в один кошелёк.
         try:
-            got_xr = _xmlriver(rest, region)
+            got_xr = _xmlriver(rest, region, ws)
         except Exception as e:  # noqa: BLE001
             print(f"  [xmlriver] добор не удался: {e}")
             got_xr = {}
