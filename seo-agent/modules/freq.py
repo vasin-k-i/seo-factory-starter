@@ -203,9 +203,12 @@ def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
     ⚠️ Пустой баланс приходит не как HTTP-ошибка, а как текст «На вашем счету
     закончились деньги» в теле — молча даёт 0, если не проверять. Как и у Wordstat:
     не смогли померить ≠ ноль.
+    ⚠️ Временное «Выполните перезапрос» (code 500) — просьба повторить, а не отказ.
 
-    Цена ~25 ₽ за 1000 запросов (дешевле на предоплате). Порядок вызова этого
-    провайдера — до Арсенкина, потому что тот же ключ открывает ещё и живую выдачу.
+    Проверено вживую 2026-08-19 на пополненном балансе: цифры совпадают с Yandex Cloud
+    Wordstat ДО ЕДИНИЦЫ («входная дверь с терморазрывом» 58 531 у обоих, «газовый котёл
+    настенный двухконтурный» 76 312 у обоих). Цена по факту списаний — 0,025 ₽/запрос.
+    Порядок вызова — до Арсенкина, потому что тот же ключ открывает ещё и живую выдачу.
     """
     user = (os.environ.get("XMLRIVER_USER") or "").strip()
     key = (os.environ.get("XMLRIVER_KEY") or "").strip()
@@ -218,27 +221,36 @@ def _xmlriver(phrases: list[str], region: int) -> dict[str, int]:
     for ph in phrases:
         url = (f"http://xmlriver.com/wordstat/new/json?user={user}&key={key}"
                f"&query={quote(ph)}&regions={region}&device=&pagetype=history")
-        try:
-            with urllib.request.urlopen(url, timeout=40) as r:
-                raw = r.read().decode("utf-8", "replace")
-        except Exception as e:  # noqa: BLE001
-            print(f"  [xmlriver] сеть на «{ph}»: {e}")
-            continue
-        if "закончились деньги" in raw or "ОШИБКА" in raw:
-            print("  [xmlriver] нет баланса — пропускаю провайдер")
+        # ⚠️ Сервис регулярно отдаёт временное «Выполните перезапрос. Ответ от поисковой
+        # системы не получен» (code 500) — это НЕ отказ, а просьба повторить. Без ретрая
+        # фраза молча выпадает из замера.
+        val = None
+        for attempt in range(4):
+            try:
+                with urllib.request.urlopen(url, timeout=60) as r:
+                    raw = r.read().decode("utf-8", "replace")
+            except Exception as e:  # noqa: BLE001
+                print(f"  [xmlriver] сеть на «{ph}»: {e}")
+                time.sleep(2 * (attempt + 1))
+                continue
+            if "закончились деньги" in raw:
+                print("  [xmlriver] нет баланса — пропускаю провайдер")
+                return out
+            if "Выполните перезапрос" in raw or "<error" in raw:
+                time.sleep(3 * (attempt + 1))
+                continue
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                print(f"  [xmlriver] не JSON на «{ph}»: {raw[:120]}")
+                break
+            if isinstance(data, dict) and data.get("error"):
+                print(f"  [xmlriver] ошибка {data.get('code')}: {data.get('error')}")
+                return out
+            val = _dig_total(data)
             break
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            print(f"  [xmlriver] не JSON на «{ph}»: {raw[:120]}")
-            continue
-        if isinstance(data, dict) and data.get("error"):
-            print(f"  [xmlriver] ошибка {data.get('code')}: {data.get('error')}")
-            break
-        val = _dig_total(data)
-        if val is None:
-            continue
-        out[ph] = val
+        if val is not None:
+            out[ph] = val
     return out
 
 
