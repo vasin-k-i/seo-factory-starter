@@ -499,6 +499,17 @@ def finalize_article(res: ArticleResult, brief: dict, mdx: str,
     if anchors_stripped:
         log.warning("  ⚠ %s: убрано %d протекающих {#anchor} из заголовков", res.slug, anchors_stripped)
 
+    # Последние ворота: почти-дубль уже живой статьи. Не удаляем и не
+    # переписываем — помечаем draft, решение за человеком.
+    dupe = find_near_duplicate(mdx, blog_dir, exclude_slug=res.slug)
+    if dupe:
+        log.warning("  ⚠ %s: почти-дубль живой статьи %s (совпадение %.0f%%) — ставлю draft: true",
+                    res.slug, dupe[0], dupe[1] * 100)
+        if "\ndraft:" in mdx:
+            mdx = re.sub(r"(?m)^draft:.*$", "draft: true", mdx, count=1)
+        else:
+            mdx = re.sub(r"(?s)(\A---\n)", r"\1draft: true\n", mdx, count=1)
+
     target = blog_dir / f"{res.slug}.mdx"
     target.write_text(mdx, encoding="utf-8")
     res.file_path = target
@@ -731,6 +742,63 @@ def _run() -> int:
 
     failed = sum(1 for r in report.results if r.status == "failed")
     return 0 if failed == 0 else 1
+
+
+# ---------------------------------------------------------------------------
+# Near-duplicate: не выпускать статью, которая почти повторяет уже живую.
+#
+# Добавлено 20.08.2026. Типовой конвейер ловит только ПОЛНОЕ совпадение
+# заголовка — и пропускает главное: генератор регулярно пишет вторую статью на
+# ту же тему другими словами. На боевом сайте так вышли две пары за месяц, обе
+# пришлось склеивать 301 задним числом, потеряв время индексации.
+#
+# Мера — доля общих 5-словных сочетаний от МЕНЬШЕГО из двух текстов
+# (контейнмент, не Жаккар): короткая статья, целиком уложенная внутрь длинной,
+# должна давать 100%. На двух заведомо разных статьях мера даёт ~7%.
+# ---------------------------------------------------------------------------
+
+NEAR_DUPE_BLOCK = float(os.environ.get("NEAR_DUPE_BLOCK", "0.45"))
+
+
+def _dupe_body(mdx: str) -> str:
+    body = re.sub(r"(?s)\A---\n.*?\n---\n", "", mdx)
+    body = re.sub(r"(?s)<[^>]+>", " ", body)
+    body = re.sub(r"[#*_`>\[\]()]", " ", body)
+    return re.sub(r"\s+", " ", body).strip().lower()
+
+
+def _dupe_ngrams(text: str, n: int = 5) -> set:
+    w = re.findall(r"[а-яёa-z0-9]+", text)
+    return {" ".join(w[i:i + n]) for i in range(len(w) - n + 1)} if len(w) >= n else set()
+
+
+def find_near_duplicate(mdx: str, blog_dir, exclude_slug: str | None = None,
+                        threshold: float = NEAR_DUPE_BLOCK):
+    """(slug, доля) самой похожей живой статьи выше порога, иначе None.
+
+    Статьи с canonicalUrl пропускаем: это уже склеенные дубли, ловить их
+    повторно незачем — иначе гард начнёт блокировать каждую статью кластера.
+    """
+    new = _dupe_ngrams(_dupe_body(mdx))
+    if not new:
+        return None
+    worst = None
+    for f in sorted(Path(blog_dir).glob("*.mdx")):
+        if exclude_slug and f.stem == exclude_slug:
+            continue
+        try:
+            raw = f.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if re.search(r"(?m)^canonicalUrl:", raw):
+            continue
+        old = _dupe_ngrams(_dupe_body(raw))
+        if not old:
+            continue
+        score = len(new & old) / min(len(new), len(old))
+        if score >= threshold and (worst is None or score > worst[1]):
+            worst = (f.stem, round(score, 3))
+    return worst
 
 
 def main() -> int:
