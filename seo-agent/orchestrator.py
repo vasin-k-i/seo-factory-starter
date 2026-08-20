@@ -78,6 +78,14 @@ def cmd_notimplemented(name: str):
     return _run
 
 
+def cmd_dupes(args: argparse.Namespace) -> int:
+    """Near-dupes коммерческих страниц, пары каннибализации по title, порог тегов,
+    покрытие sitemap. Настройка — DUPES_GROUPS / DUPES_CATALOG_PATH, см. модуль."""
+    from modules import dupes
+    dupes.run(dry_run=args.dry_run, as_json=args.json)
+    return 0
+
+
 COMMANDS = {
     "m1": cmd_m1,
     "m2": cmd_m2,
@@ -85,6 +93,7 @@ COMMANDS = {
     "m4": cmd_m4,
     "m5": cmd_m5,
     "m6": cmd_m6,
+    "dupes": cmd_dupes,
     "digest": cmd_digest,
     "daily": cmd_daily,
 }
@@ -102,6 +111,8 @@ def main() -> int:
                         help="(M4) Сканировать статьи с этой даты (ISO YYYY-MM-DD)")
     parser.add_argument("--top-n-issues", type=int, default=5,
                         help="(M4) Сколько worst-articles обработать (открыть Issues)")
+    parser.add_argument("--json", action="store_true",
+                        help="(dupes) машинный вывод отчёта")
     args = parser.parse_args()
 
     logging.basicConfig(
