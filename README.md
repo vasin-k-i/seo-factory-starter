@@ -179,7 +179,6 @@ python3 seo-agent/orchestrator.py dupes --json
 | Секрет | Зачем | Где взять |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Claude: стратег, M1, тексты | console.anthropic.com |
-| `DEEPSEEK_API_KEY` *(опц.)* | стирание маркировки Claude в текстах (`content-factory/dewatermark/`) | platform.deepseek.com — новым аккаунтам 5 млн токенов на 30 дней |
 | `GSC_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN` | Google Search Console | Google Cloud Console → OAuth Client; refresh-токен — `gsc_oauth_setup.py` |
 | `YANDEX_WEBMASTER_TOKEN` | Яндекс.Вебмастер | OAuth Яндекса (scope webmaster:hostinfo,verify) |
 | `PSI_API_KEY` | PageSpeed / Core Web Vitals | Google Cloud Console → PageSpeed Insights API |
@@ -263,37 +262,6 @@ python3 seo-agent/modules/serp.py top "query" --engine google      # то же �
 иначе «нас нет в топе» окажется просто несостоявшимся запросом.
 
 ---
-
-## Стирание маркировки Claude *(опционально, нужен ключ DeepSeek)*
-
-С **02.08.2026** Anthropic ставит невидимую маркировку на текст новых моделей Claude
-(ст. 50 EU AI Act, действует по всему миру). Публичного детектора пока нет, но когда он
-появится, у поисковиков будет дешёвый способ отличить сгенерированный контент.
-
-В пакет добавлен опциональный шаг `content-factory/dewatermark/`: он пересказывает статью
-другой моделью — у неё другой сэмплер и нет ключа Anthropic, поэтому сигнал разрушается.
-
-**По умолчанию выключен.** Требует отдельного платного ключа `DEEPSEEK_API_KEY`.
-
-```bash
-# нужен ли вам этот шаг вообще
-python3 -m dewatermark --check-writer site.config.yml
-
-# очередь перед публикацией
-python3 -m dewatermark --dir content-factory/queue --limit 5
-```
-
-⚠️ **Если статьи пишет не Claude — не включайте.** Codex и другие писатели маркировку не
-ставят, рерайт будет тратой денег без результата. `--check-writer` это и проверяет.
-
-⚠️ **Модуль не доказывает, что метка стёрлась** — проверить нечем, пока нет детектора.
-Он меряет прокси: долю уничтоженных 6-словных цепочек оригинала.
-
-⚠️ **На плотном техническом тексте метод не тянет** (41–53 % против 78–92 % на
-гуманитарном): термины и номера ГОСТов держат формулировки. Такие статьи гейт заворачивает
-вместо публикации.
-
-Как устроено, сколько стоит и где грабли — `content-factory/dewatermark/README.md`.
 
 ## Важно
 
