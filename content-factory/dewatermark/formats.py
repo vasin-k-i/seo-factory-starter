@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-FORMATS = ("mdx", "md", "html")
+FORMATS = ("mdx", "md", "html", "ir")
 
 
 @dataclass
@@ -46,7 +46,10 @@ class Doc:
 
 
 def detect(path) -> str:
+    """По расширению. .json на psycholesson — это IR-дерево блоков, у него свой путь."""
     suffix = str(path).rsplit(".", 1)[-1].lower()
+    if suffix == "json":
+        return "ir"
     return suffix if suffix in FORMATS else "md"
 
 

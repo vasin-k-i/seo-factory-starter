@@ -27,7 +27,29 @@ import json
 import time
 from dataclasses import dataclass, field
 
-from . import backends, formats, gates
+from . import backends, formats, gates, irjson
+
+IR_RULES = """ПРАВИЛА. Нарушение любого — брак.
+
+Тебе дан JSON-массив кусков текста из одного раздела статьи. Верни JSON-массив
+РОВНО ТОЙ ЖЕ ДЛИНЫ и в том же порядке: кусок i переписан на месте куска i.
+Ничего не склеивай, не разбивай и не переставляй — сборка идёт по индексам.
+
+Каждый кусок:
+1. Тот же смысл. Ничего не добавляй и не выбрасывай. Новых цифр не появляется НИКОГДА.
+   Не уточняй то, что сказано обобщённо.
+2. Не переворачивай отношения: «А входит в Б» не становится «Б входит в А».
+3. Не меняй силу утверждения: «обычно» не становится «всегда», «может» — «обязан».
+4. Все формулировки — другие. Совпадение длиннее пяти слов подряд недопустимо,
+   кроме терминов, названий и чисел из пункта 5.
+5. Дословно переносятся: числа, даты, сроки, суммы; термины и аббревиатуры; названия
+   законов, организаций, должностей; HTML-теги внутри куска — вместе с атрибутами.
+6. Инфостиль: без «является», «осуществляет», «в рамках», «в настоящее время»,
+   «следует отметить», «данный»; без эпитетов «качественный», «эффективный»,
+   «современный», «уникальный». Активный залог. Без эмодзи. Предложения 12–18 слов.
+7. Длина каждого куска ±10 % от исходной.
+
+ОТВЕТ — только JSON-массив строк. Без пояснений, без ``` вокруг."""
 
 REWRITE_SYSTEM = """Ты — редактор блога. Работаешь по «Пиши, сокращай» Ильяхова:
 информационный стиль, без воды и канцелярита.
@@ -182,6 +204,102 @@ def _patch_section(rewriter, body: str, defects: list, fmt: str, log) -> str:
     return out
 
 
+def _rewrite_ir_section(rewriter, doc, section, log) -> bool:
+    """Секция IR: массив строк туда, массив той же длины обратно. Правда — True."""
+    original = irjson.texts(doc, section)
+    base = (f"{IR_RULES}\n\nРаздел статьи «{section.label}». "
+            f"Кусков: {len(original)}.\n\n"
+            f"ИСХОДНЫЕ КУСКИ (JSON):\n{json.dumps(original, ensure_ascii=False, indent=1)}")
+    joined_before = "\n\n".join(original)
+
+    problems = ["не переписан"]
+    for attempt in range(3):
+        prompt = base if attempt == 0 else (
+            base + "\n\nПРЕДЫДУЩАЯ ПОПЫТКА ЗАБРАКОВАНА: " + "; ".join(problems)
+            + ". Перепиши заново с учётом этого.")
+        try:
+            values = backends.parse_json(rewriter(REWRITE_SYSTEM, prompt))
+            if not isinstance(values, list) or len(values) != len(original):
+                problems = [f"вернулось {len(values) if isinstance(values, list) else '?'} "
+                            f"кусков вместо {len(original)}"]
+                log(f"      попытка {attempt + 1}: {problems[0]}")
+                continue
+            values = [str(v) for v in values]
+        except Exception as e:                           # noqa: BLE001
+            log(f"      попытка {attempt + 1}: {type(e).__name__}: {e}")
+            time.sleep(3 * (attempt + 1))
+            continue
+
+        problems = gates.check_section(joined_before, "\n\n".join(values), "html")
+        if not problems:
+            irjson.apply(doc, section, values)
+            return True
+        log(f"      попытка {attempt + 1} забракована: {'; '.join(problems)}")
+    log(f"      ⚠️ секция оставлена как была: {'; '.join(problems)}")
+    return False
+
+
+def _process_ir(path, rewriter, rewriter_name, log, dry, started) -> Result:
+    import pathlib
+    doc = irjson.parse(pathlib.Path(path).read_text(encoding="utf-8"))
+    before_body = doc.body
+    log(f"  {pathlib.Path(path).name}: IR, {len(doc.sections)} разделов, "
+        f"{sum(len(s.slots) for s in doc.sections)} кусков, "
+        f"{len(gates.words(before_body))} слов, рерайтер {rewriter_name}")
+
+    for i, section in enumerate(doc.sections, 1):
+        log(f"    [{i}/{len(doc.sections)}] {section.label[:60]}")
+        _rewrite_ir_section(rewriter, doc, section, log)
+
+    after_body = doc.body
+    log("    аудит смысла (Claude)…")
+    try:
+        audit = backends.parse_json(backends.call_claude(
+            f"{AUDIT_PROMPT}\n\n=== ОРИГИНАЛ ===\n{before_body}"
+            f"\n\n=== ПЕРЕСКАЗ ===\n{after_body}"))
+        defects = audit.get("defects", []) if isinstance(audit, dict) else []
+    except Exception as e:                               # noqa: BLE001
+        return Result(str(path), "error", f"аудит не отработал: {type(e).__name__}: {e}",
+                      seconds=time.time() - started, cost_rub=backends.cost_rub())
+
+    critical_defects = [d for d in defects if d.get("severity") == "критично"]
+    log(f"    дефектов: {len(defects)} (критичных {len(critical_defects)})")
+
+    # На IR точечную правку не делаем: она вернула бы блок другой длины и порвала
+    # сборку по индексам. Есть критичный дефект — статью просто не пропускаем.
+    rewritten = gates.rewritten_share(before_body, after_body)
+    stats = {
+        "переписано_%": round(rewritten, 1),
+        "слов_было": len(gates.words(before_body)),
+        "слов_стало": len(gates.words(after_body)),
+        "заголовки_целы": True,          # заголовки модели не отдавались вовсе
+        "числа_потеряны": sorted(gates.numbers(before_body) - gates.numbers(after_body)),
+        "числа_лишние": sorted(gates.numbers(after_body) - gates.numbers(before_body)),
+        "ссылки_потеряны": sorted(gates.links(before_body) - gates.links(after_body)),
+    }
+
+    critical = [d.get("what", "без описания") for d in critical_defects]
+    if stats["ссылки_потеряны"]:
+        critical.append(f"потеряны ссылки: {', '.join(stats['ссылки_потеряны'])}")
+    if stats["числа_потеряны"]:
+        critical.append(f"потеряны числа: {', '.join(stats['числа_потеряны'])}")
+    if rewritten < gates.MIN_REWRITE_DOC:
+        critical.append(f"переписано всего {stats['переписано_%']}% при пороге "
+                        f"{gates.MIN_REWRITE_DOC}% — маркировка уцелела")
+
+    passed = not critical
+    result = Result(str(path), "published" if passed else "rejected",
+                    stats=stats, defects=defects, critical=critical,
+                    cost_rub=backends.cost_rub(), seconds=time.time() - started,
+                    text=doc.render() if passed else None)
+    if passed and not dry:
+        pathlib.Path(path).write_text(result.text, encoding="utf-8")
+    log(f"    → {result.status.upper()}: переписано {stats['переписано_%']}%, "
+        f"{result.cost_rub:.2f} ₽, {result.seconds:.0f} с"
+        + (f"; блокеры: {'; '.join(critical)}" if critical else ""))
+    return result
+
+
 def process(path, *, rewriter_name: str = "deepseek", log=print,
             dry: bool = False) -> Result:
     started = time.time()
@@ -193,6 +311,9 @@ def process(path, *, rewriter_name: str = "deepseek", log=print,
         rewriter = backends.REWRITERS[rewriter_name]
     except KeyError:
         return Result(path, "error", f"нет рерайтера «{rewriter_name}»")
+
+    if fmt == "ir":
+        return _process_ir(path, rewriter, rewriter_name, log, dry, started)
 
     import pathlib
     original_text = pathlib.Path(path).read_text(encoding="utf-8")
