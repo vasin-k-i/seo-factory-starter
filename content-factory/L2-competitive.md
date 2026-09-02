@@ -50,7 +50,7 @@ if L2_ENABLED:
 #   пометив «ОРИЕНТИРЫ ПО СТРУКТУРЕ, не факты для утверждений»).
 ```
 
-Полностью проваренный референс (Batch API, стадия `00_competitive`, картинки) — в боевом
+Полностью проваренный референс (стадия `00_competitive`, картинки) — в боевом
 `college-site/content-factory/orchestrator.py` (функции `_collect_competitive_one`,
 `brief_user(..., competitive)`), там L2 включён на cron.
 

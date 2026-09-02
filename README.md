@@ -48,7 +48,7 @@ content-factory/           # генератор статей (бриф → те�
 | `orchestrator.py m1` | семантика → темы для фабрики | вс 04:00 |
 | `orchestrator.py dupes` | дубли коммерческих страниц, каннибализация, порог тегов, покрытие карты | вручную / раз в месяц |
 | `orchestrator.py digest` | недельный разбор | пн 11:00 |
-| контент-фабрика | 5 статей/день (Batch API, −50%) | ежедневно 09:00 |
+| контент-фабрика | 5 статей/день (по подписке, пишет наперёд в очередь) | ежедневно 09:00 |
 
 ---
 
@@ -100,7 +100,8 @@ python3 seo-agent/orchestrator.py dupes --json
 
 2. Запроси у меня ПО ОЧЕРЕДИ и положи в GitHub Secrets через
    `gh secret set <ИМЯ>` (значения в логи не выводи):
-     ANTHROPIC_API_KEY, GSC_OAUTH_CLIENT_ID, GSC_OAUTH_CLIENT_SECRET,
+     токен ИИ-агента по подписке (claude setup-token),
+     GSC_OAUTH_CLIENT_ID, GSC_OAUTH_CLIENT_SECRET,
      GSC_OAUTH_REFRESH_TOKEN, YANDEX_WEBMASTER_TOKEN, PSI_API_KEY,
      TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
      (опционально — позиции Яндекса: TOPVISOR_API_TOKEN, TOPVISOR_USER_ID,
@@ -178,7 +179,7 @@ python3 seo-agent/orchestrator.py dupes --json
 
 | Секрет | Зачем | Где взять |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | Claude: стратег, M1, тексты | console.anthropic.com |
+| Токен ИИ-агента (по подписке) | Claude: стратег, M1, тексты — работает на подписке, а не по счётчику API | Claude Code: `claude setup-token` |
 | `GSC_OAUTH_CLIENT_ID/SECRET/REFRESH_TOKEN` | Google Search Console | Google Cloud Console → OAuth Client; refresh-токен — `gsc_oauth_setup.py` |
 | `YANDEX_WEBMASTER_TOKEN` | Яндекс.Вебмастер | OAuth Яндекса (scope webmaster:hostinfo,verify) |
 | `PSI_API_KEY` | PageSpeed / Core Web Vitals | Google Cloud Console → PageSpeed Insights API |
